@@ -9,15 +9,15 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type Service struct {
+type userService struct {
 	repo *Repository
 }
 
-func NewService(repo *Repository) *Service {
-	return &Service{repo: repo}
+func NewService(repo *Repository) *userService {
+	return &userService{repo: repo}
 }
 
-func (s *Service) Register(user *models.User) (*models.User, error) {
+func (s *userService) Register(user *models.User) (*models.User, error) {
 	// 1. Check if email already exists
 	existing, _ := s.repo.GetUserByEmail(user.Email)
 	if existing != nil {
