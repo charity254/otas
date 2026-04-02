@@ -8,14 +8,22 @@ import (
 )
 
 func Run() {
-	query, err := os.ReadFile("migrations/001_init.sql")
-	if err != nil {
-		log.Fatal("Could not read migration file:", err)
+	files := []string{
+		"migrations/001_init.sql",
+		"migrations/002_transactions.sql",
 	}
 
-	if _, err := config.DB.Exec(string(query)); err != nil {
-		log.Fatal("Migration failed:", err)
-	}
+	for _, file := range files {
+		query, err := os.ReadFile(file)
+		if err != nil {
+			log.Fatalf("Could not read migration file %s: %v", file, err)
+		}
 
-	log.Println("Migrations ran successfully")
+		if _, err := config.DB.Exec(string(query)); err != nil {
+			log.Fatalf("Migration failed for %s: %v", file, err)
+		}
+
+		log.Printf("Migrations ran successfully: %s", file)
+
+	}
 }
