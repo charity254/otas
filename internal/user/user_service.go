@@ -10,10 +10,10 @@ import (
 )
 
 type userService struct {
-	repo *Repository
+	repo *userRepository
 }
 
-func NewService(repo *Repository) *userService {
+func NewService(repo *userRepository) *userService {
 	return &userService{repo: repo}
 }
 
@@ -31,6 +31,16 @@ func (s *userService) Register(user *models.User) (*models.User, error) {
 	}
 	user.Password = string(hashed)
 
+	// 3. Create user
+	createdUser, err := s.repo.CreateUser(user)
+	if err != nil {
+		return nil, errors.New("failed to create user")
+	}
+
 	// 3. Save user, password is now a hash
-	return s.repo.CreateUser(user)
+	if err := s.createAccounts(createdUser); err != nil {
+		return nil, err
+	}
+
+	return createdUser, nil
 }
