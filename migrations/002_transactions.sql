@@ -6,3 +6,6 @@ CREATE TABLE IF NOT EXISTS transactions (
     allocated_to VARCHAR(20) NOT NULL,
     created_at   TIMESTAMP NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX IF NOT EXISTS idx_transactions_user_date
+ON transactions(user_id, created_at);
