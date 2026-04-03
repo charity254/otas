@@ -4,17 +4,19 @@ package user
 import (
 	"errors"
 
+	"otas/internal/account"
 	"otas/models"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
 type userService struct {
-	repo *userRepository
+	repo        *userRepository
+	accountRepo *account.AccountRepository
 }
 
-func NewService(repo *userRepository) *userService {
-	return &userService{repo: repo}
+func NewUserService(repo *userRepository, accountRepo *account.AccountRepository) *userService {
+	return &userService{repo: repo, accountRepo: accountRepo}
 }
 
 func (s *userService) Register(user *models.User) (*models.User, error) {
@@ -37,10 +39,46 @@ func (s *userService) Register(user *models.User) (*models.User, error) {
 		return nil, errors.New("failed to create user")
 	}
 
-	// 3. Save user, password is now a hash
 	if err := s.createAccounts(createdUser); err != nil {
 		return nil, err
 	}
 
 	return createdUser, nil
+}
+
+func (s *userService) createAccounts(user *models.User) error {
+	// always create main account
+	if _, err := s.accountRepo.CreateAccount(user.ID, models.AccountTypeMain); err != nil {
+		return errors.New("failed to create main account")
+	}
+
+	switch {
+	case user.SavingType == models.SavingTypeGroup && user.DailyLimit == models.DailyLimit10:
+		if _, err := s.accountRepo.CreateAccount(user.ID, models.AccountTypeGroup); err != nil {
+			return errors.New("failed to create group account")
+		}
+		if _, err := s.accountRepo.CreateAccount(user.ID, models.AccountTypeLocked); err != nil {
+			return errors.New("failed to create locked account")
+		}
+
+	case user.SavingType == models.SavingTypeGroup && user.DailyLimit == models.DailyLimit5:
+		if _, err := s.accountRepo.CreateAccount(user.ID, models.AccountTypeGroup); err != nil {
+			return errors.New("failed to create group account")
+		}
+
+	case user.SavingType == models.SavingTypePersonal && user.DailyLimit == models.DailyLimit10:
+		if _, err := s.accountRepo.CreateAccount(user.ID, models.AccountTypeLocked); err != nil {
+			return errors.New("failed to create locked account")
+		}
+		if _, err := s.accountRepo.CreateAccount(user.ID, models.AccountTypeFlexible); err != nil {
+			return errors.New("failed to create flexible account")
+		}
+
+	case user.SavingType == models.SavingTypePersonal && user.DailyLimit == models.DailyLimit5:
+		if _, err := s.accountRepo.CreateAccount(user.ID, models.AccountTypeLocked); err != nil {
+			return errors.New("failed to create locked account")
+		}
+	}
+
+	return nil
 }
