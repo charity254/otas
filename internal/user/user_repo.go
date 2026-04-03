@@ -7,15 +7,15 @@ import (
 	"otas/models"
 )
 
-type Repository struct {
+type userRepository struct {
 	DB *sql.DB
 }
 
-func NewRepository(db *sql.DB) *Repository {
-	return &Repository{DB: db}
+func NewRepository(db *sql.DB) *userRepository {
+	return &userRepository{DB: db}
 }
 
-func (r *Repository) CreateUser(user *models.User) (*models.User, error) {
+func (r *userRepository) CreateUser(user *models.User) (*models.User, error) {
 	query := `
         INSERT INTO users (name, email, phone, password, saving_type, daily_limit)
         VALUES ($1, $2, $3, $4, $5, $6)
@@ -45,7 +45,7 @@ func (r *Repository) CreateUser(user *models.User) (*models.User, error) {
 	return result, nil
 }
 
-func (r *Repository) GetUserByEmail(email string) (*models.User, error) {
+func (r *userRepository) GetUserByEmail(email string) (*models.User, error) {
 	query := `
         SELECT id, name, email, phone, password, saving_type, daily_limit, created_at, updated_at
         FROM users
