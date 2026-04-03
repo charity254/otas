@@ -82,3 +82,15 @@ func (s *userService) createAccounts(user *models.User) error {
 
 	return nil
 }
+
+func (s *userService) Login(email, password string) (*models.User, error) {
+	//verify user email
+	user, err := s.repo.GetUserByEmail(email)
+	if err != nil {
+		return nil, errors.New("invalid email or password")
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		return nil, errors.New("invalid email or password")
+	}
+	return user, nil
+}
