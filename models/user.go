@@ -10,6 +10,7 @@ type (
 const (
 	SavingTypeGroup    SavingType = "group"
 	SavingTypePersonal SavingType = "personal"
+	SavingTypeFlexible SavingType = "flexible"
 	DailyLimit5        DailyLimit = 5
 	DailyLimit10       DailyLimit = 10
 )
