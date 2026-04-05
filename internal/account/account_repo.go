@@ -14,14 +14,19 @@ func NewAccountRepository(db *sql.DB) *AccountRepository {
 	return &AccountRepository{DB: db}
 }
 
-func (r *AccountRepository) CreateAccount(userID int, accountType models.AccountType) (*models.Account, error) {
+func (r *AccountRepository) CreateAccount(acct *models.Account) (*models.Account, error) {
 	query := `
         INSERT INTO accounts (user_id, type, balance)
         VALUES ($1, $2, 0.00)
         RETURNING id, user_id, type, balance, created_at, updated_at
     `
 	account := &models.Account{}
-	err := r.DB.QueryRow(query, userID, accountType).Scan(
+	err := r.DB.QueryRow(query,
+		acct.UserID,
+		acct.Type,
+		acct.Balance,
+		acct.CreatedAt,
+	).Scan(
 		&account.ID,
 		&account.UserID,
 		&account.Type,
