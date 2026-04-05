@@ -32,3 +32,11 @@ func (s *groupService) GetGroupProgress(groupID, userID int) (*models.GroupProgr
 
 	return progress, nil
 }
+
+func (s *groupService) GetMemberContribution(groupID, userID int) (float64, error) {
+	contribution, err := s.repo.GetMemberContribution(groupID, userID)
+	if err != nil {
+		return 0, errors.New("failed to get member contribution")
+	}
+	return contribution, nil
+}
