@@ -7,15 +7,15 @@ import (
 	"otas/models"
 )
 
-type userRepository struct {
+type UserRepository struct {
 	DB *sql.DB
 }
 
-func NewUserRepository(db *sql.DB) *userRepository {
-	return &userRepository{DB: db}
+func NewUserRepository(db *sql.DB) *UserRepository {
+	return &UserRepository{DB: db}
 }
 
-func (r *userRepository) CreateUser(user *models.User) (*models.User, error) {
+func (r *UserRepository) CreateUser(user *models.User) (*models.User, error) {
 	query := `
         INSERT INTO users (name, email, phone, password, saving_type, daily_limit)
         VALUES ($1, $2, $3, $4, $5, $6)
@@ -45,7 +45,7 @@ func (r *userRepository) CreateUser(user *models.User) (*models.User, error) {
 	return result, nil
 }
 
-func (r *userRepository) GetUserByEmail(email string) (*models.User, error) {
+func (r *UserRepository) GetUserByEmail(email string) (*models.User, error) {
 	query := `
         SELECT id, name, email, phone, password, saving_type, daily_limit, created_at, updated_at
         FROM users
@@ -53,6 +53,30 @@ func (r *userRepository) GetUserByEmail(email string) (*models.User, error) {
     `
 	user := &models.User{}
 	err := r.DB.QueryRow(query, email).Scan(
+		&user.ID,
+		&user.Name,
+		&user.Email,
+		&user.Phone,
+		&user.Password,
+		&user.SavingType,
+		&user.DailyLimit,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func (r *UserRepository) GetUserByID(userID int) (*models.User, error) {
+	query := `
+		SELECT id, name, email, phone, password, saving_type, daily_limit, created_at, updated_at
+		FROM users
+		WHERE id = $1
+	`
+	user := &models.User{}
+	err := r.DB.QueryRow(query, userID).Scan(
 		&user.ID,
 		&user.Name,
 		&user.Email,

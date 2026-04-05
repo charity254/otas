@@ -4,16 +4,18 @@ import (
 	"errors"
 
 	"otas/internal/account"
+	"otas/internal/user"
 	"otas/models"
 )
 
 type transactionService struct {
 	repo        *transactionRepository
 	accountRepo *account.AccountRepository
+	userRepo    *user.UserRepository
 }
 
-func NewTransactionService(repo *transactionRepository, accountRepo *account.AccountRepository) *transactionService {
-	return &transactionService{repo: repo, accountRepo: accountRepo}
+func NewTransactionService(repo *transactionRepository, accountRepo *account.AccountRepository, userRepo *user.UserRepository) *transactionService {
+	return &transactionService{repo: repo, accountRepo: accountRepo, userRepo: userRepo}
 }
 
 func (s *transactionService) ProcessTransaction(userID int, amount float64, user *models.User) (*models.Transaction, error) {
@@ -29,7 +31,7 @@ func (s *transactionService) ProcessTransaction(userID int, amount float64, user
 			UserID:      userID,
 			Amount:      amount,
 			Deduction:   0,
-			AllocatedTo: "none",
+			AllocatedTo: "main",
 		})
 	}
 
@@ -105,4 +107,12 @@ func (s *transactionService) GetMemberContribution(userID int, accountType strin
 		return 0, errors.New("failed to get member contribution")
 	}
 	return total, nil
+}
+
+func (s *transactionService) GetUser(userID int) (*models.User, error) {
+	user, err := s.userRepo.GetUserByID(userID)
+	if err != nil {
+		return nil, errors.New("user not found")
+	}
+	return user, nil
 }
