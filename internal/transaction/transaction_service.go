@@ -116,3 +116,11 @@ func (s *transactionService) GetUser(userID int) (*models.User, error) {
 	}
 	return user, nil
 }
+
+func (s *transactionService) GetGroupTotalSavings(userID int) (float64, error) {
+	balance, err := s.accountRepo.GetAccountBalance(userID, models.AccountTypeGroup)
+	if err != nil {
+		return 0, errors.New("failed to get group total savings")
+	}
+	return balance, nil
+}

@@ -73,3 +73,18 @@ func (h *transactionHandler) GetMemberContribution(c *gin.Context) {
 		"total":        total,
 	})
 }
+
+func (h *transactionHandler) GetGroupTotalSavings(c *gin.Context) {
+	userID := c.GetInt("userID")
+
+	total, err := h.service.GetGroupTotalSavings(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"user_id":             userID,
+		"group_total_savings": total,
+	})
+}

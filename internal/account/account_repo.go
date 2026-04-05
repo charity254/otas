@@ -79,3 +79,18 @@ func (r *AccountRepository) UpdateBalance(userID int, accountType models.Account
 	}
 	return nil
 }
+
+func (r *AccountRepository) GetAccountBalance(userID int, accountType models.AccountType) (float64, error) {
+	query := `
+		SELECT balance
+		FROM accounts
+		WHERE user_id = $1
+		AND type = $2
+	`
+	var balance float64
+	err := r.DB.QueryRow(query, userID, accountType).Scan(&balance)
+	if err != nil {
+		return 0, err
+	}
+	return balance, nil
+}
