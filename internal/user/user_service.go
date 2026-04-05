@@ -68,7 +68,7 @@ func (s *userService) createAccounts(user *models.User) error {
 	}
 
 	switch {
-	// Group + 10: group + locked
+	// Group + locked: 10 deductions
 	case user.SavingType == models.SavingTypeGroup && user.DailyLimit == models.DailyLimit10:
 		if _, err := s.accountRepo.CreateAccount(&models.Account{UserID: user.ID, Type: models.AccountTypeGroup}); err != nil {
 			return errors.New("failed to create group account")
@@ -77,13 +77,13 @@ func (s *userService) createAccounts(user *models.User) error {
 			return errors.New("failed to create locked account")
 		}
 
-	// Group + 5: group only
+	// Group: 5 deductions
 	case user.SavingType == models.SavingTypeGroup && user.DailyLimit == models.DailyLimit5:
 		if _, err := s.accountRepo.CreateAccount(&models.Account{UserID: user.ID, Type: models.AccountTypeGroup}); err != nil {
 			return errors.New("failed to create group account")
 		}
 
-	// Personal + locked + 10: locked + flexible
+	// Flexible + locked:10 deductions
 	case user.SavingType == models.SavingTypePersonal && user.DailyLimit == models.DailyLimit10:
 		if _, err := s.accountRepo.CreateAccount(&models.Account{UserID: user.ID, Type: models.AccountTypeLocked}); err != nil {
 			return errors.New("failed to create locked account")
@@ -92,13 +92,13 @@ func (s *userService) createAccounts(user *models.User) error {
 			return errors.New("failed to create flexible account")
 		}
 
-	// Personal + locked + 5: locked only
+	// Locked: 5 deductions
 	case user.SavingType == models.SavingTypePersonal && user.DailyLimit == models.DailyLimit5:
 		if _, err := s.accountRepo.CreateAccount(&models.Account{UserID: user.ID, Type: models.AccountTypeLocked}); err != nil {
 			return errors.New("failed to create locked account")
 		}
 
-	// Personal flexible only: main account serves as flexible, nothing extra needed
+	// Personal flexible only: main account serves as flexible
 	case user.SavingType == models.SavingTypeFlexible:
 		// main account already created above
 	}
