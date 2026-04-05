@@ -29,3 +29,18 @@ func (r *GroupRepository) GetGroupProgress(groupID int) (*models.GroupProgress, 
 	}
 	return progress, nil
 }
+
+// group_repo.go
+func (r *GroupRepository) GetMemberContribution(groupID, userID int) (float64, error) {
+	query := `
+		SELECT contribution_amount FROM group_members
+		WHERE group_id = $1
+		AND user_id = $2
+	`
+	var contribution float64
+	err := r.DB.QueryRow(query, groupID, userID).Scan(&contribution)
+	if err != nil {
+		return 0, err
+	}
+	return contribution, nil
+}
