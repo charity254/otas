@@ -14,10 +14,7 @@ func NewGroupRepository(db *sql.DB) *GroupRepository {
 }
 func (r *GroupRepository) GetGroupProgress(groupID int) (*models.GroupProgress, error) {
 	query := `
-		SELECT 
-			id,
-			name,
-			target_amount - current_amount AS remaining_amount
+		SELECT id,name,target_amount - current_amount AS remaining_amount
 		FROM groups
 		WHERE id = $1
 	`
