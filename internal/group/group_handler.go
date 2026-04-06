@@ -45,10 +45,10 @@ func (h *groupHandler) CreateGroup(c *gin.Context) {
 }
 
 func (h *groupHandler) GetGroupProgress(c *gin.Context) {
-	// 1. Get userID from JWT context
+	// Get userID from JWT context
 	userID := c.GetInt("userID")
 
-	// 2. Get groupID from URL parameter
+	// Get groupID from URL parameter
 	groupIDStr := c.Param("id")
 	groupID, err := strconv.Atoi(groupIDStr)
 	if err != nil {
@@ -56,7 +56,7 @@ func (h *groupHandler) GetGroupProgress(c *gin.Context) {
 		return
 	}
 
-	// 3. Get group progress
+	// Get group progress
 	progress, err := h.service.GetGroupProgress(groupID, userID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -91,5 +91,28 @@ func (h *groupHandler) GetMemberContribution(c *gin.Context) {
 		"group_id":          groupID,
 		"user_id":           userID,
 		"user_contribution": contribution,
+	})
+}
+
+func (h *groupHandler) JoinGroup(c *gin.Context) {
+	// Get userID from JWT context
+	userID := c.GetInt("userID")
+
+	//Get groupID from URL parameter
+	groupIDStr := c.Param("id")
+	groupID, err := strconv.Atoi(groupIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid group id"})
+		return
+	}
+
+	//Join group
+	if err := h.service.JoinGroup(groupID, userID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "joined group successfully",
 	})
 }

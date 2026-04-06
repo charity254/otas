@@ -75,3 +75,19 @@ func (r *GroupRepository) GetMemberContribution(groupID, userID int) (float64, e
 	}
 	return contribution, nil
 }
+
+func (r *GroupRepository) IsGroupMember(groupID, userID int) (bool, error) {
+	query := `
+		SELECT EXISTS (
+			SELECT 1 FROM group_members
+			WHERE group_id = $1
+			AND user_id = $2
+		)
+	`
+	var exists bool
+	err := r.DB.QueryRow(query, groupID, userID).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
+}

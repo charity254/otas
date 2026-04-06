@@ -59,3 +59,21 @@ func (s *groupService) GetMemberContribution(groupID, userID int) (float64, erro
 	}
 	return contribution, nil
 }
+
+func (s *groupService) JoinGroup(groupID, userID int) error {
+	// 1. Check if already a member
+	isMember, err := s.repo.IsGroupMember(groupID, userID)
+	if err != nil {
+		return errors.New("failed to check membership")
+	}
+	if isMember {
+		return errors.New("already a member of this group")
+	}
+
+	// 2. Add user to group
+	if err := s.repo.AddGroupMember(groupID, userID); err != nil {
+		return errors.New("failed to join group")
+	}
+
+	return nil
+}
