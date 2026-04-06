@@ -45,7 +45,7 @@ func (r *GroupRepository) AddGroupMember(groupID, userID int) error {
 
 func (r *GroupRepository) GetGroupProgress(groupID int) (*models.GroupProgress, error) {
 	query := `
-		SELECT id,name,target_amount - current_amount AS remaining_amount
+		SELECT id,name, current_amount, target_amount - current_amount AS remaining_amount
 		FROM groups
 		WHERE id = $1
 	`
@@ -53,6 +53,7 @@ func (r *GroupRepository) GetGroupProgress(groupID int) (*models.GroupProgress, 
 	err := r.DB.QueryRow(query, groupID).Scan(
 		&progress.GroupID,
 		&progress.GroupName,
+		&progress.CurrentAmount,
 		&progress.RemainingAmount,
 	)
 	if err != nil {
@@ -65,11 +66,13 @@ func (r *GroupRepository) GetMemberContribution(groupID, userID int) (float64, e
 	query := `
 		SELECT COALESCE(SUM(t.deduction), 0)
 		FROM transactions t
+		JOIN group_members gm ON gm.user_id = t.user_id
 		WHERE t.user_id = $1
 		AND t.allocated_to = 'group'
+		AND gm.group_id = $2
 	`
 	var total float64
-	err := r.DB.QueryRow(query, userID).Scan(&total)
+	err := r.DB.QueryRow(query, userID, groupID).Scan(&total)
 	if err != nil {
 		return 0, err
 	}
