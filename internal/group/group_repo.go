@@ -61,19 +61,19 @@ func (r *GroupRepository) GetGroupProgress(groupID int) (*models.GroupProgress, 
 	return progress, nil
 }
 
-// group_repo.go
 func (r *GroupRepository) GetMemberContribution(groupID, userID int) (float64, error) {
 	query := `
-		SELECT contribution_amount FROM group_members
-		WHERE group_id = $1
-		AND user_id = $2
+		SELECT COALESCE(SUM(t.deduction), 0)
+		FROM transactions t
+		WHERE t.user_id = $1
+		AND t.allocated_to = 'group'
 	`
-	var contribution float64
-	err := r.DB.QueryRow(query, groupID, userID).Scan(&contribution)
+	var total float64
+	err := r.DB.QueryRow(query, userID).Scan(&total)
 	if err != nil {
 		return 0, err
 	}
-	return contribution, nil
+	return total, nil
 }
 
 func (r *GroupRepository) IsGroupMember(groupID, userID int) (bool, error) {
