@@ -91,3 +91,39 @@ func (r *GroupRepository) IsGroupMember(groupID, userID int) (bool, error) {
 	}
 	return exists, nil
 }
+
+func (r *GroupRepository) GetGroupMemberCount(groupID int) (int, error) {
+	query := `
+		SELECT COUNT(*) FROM group_members
+		WHERE group_id = $1
+	`
+	var count int
+	err := r.DB.QueryRow(query, groupID).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (r *GroupRepository) GetGroupTarget(groupID int) (float64, error) {
+	query := `
+		SELECT target_amount FROM groups
+		WHERE id = $1
+	`
+	var target float64
+	err := r.DB.QueryRow(query, groupID).Scan(&target)
+	if err != nil {
+		return 0, err
+	}
+	return target, nil
+}
+
+func (r *GroupRepository) UpdateAllMemberContributions(groupID int, contribution float64) error {
+	query := `
+		UPDATE group_members
+		SET contribution_amount = $1
+		WHERE group_id = $2
+	`
+	_, err := r.DB.Exec(query, contribution, groupID)
+	return err
+}

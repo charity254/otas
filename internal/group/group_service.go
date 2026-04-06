@@ -2,6 +2,7 @@ package group
 
 import (
 	"errors"
+	"math"
 
 	"otas/models"
 )
@@ -28,6 +29,11 @@ func (s *groupService) CreateGroup(name string, targetAmount float64, createdBy 
 	// 3. Assign creator as first member
 	if err := s.repo.AddGroupMember(group.ID, createdBy); err != nil {
 		return nil, errors.New("failed to assign creator as group member")
+	}
+
+	// 4. creator is first member — contribution = full target
+	if err := s.repo.UpdateAllMemberContributions(group.ID, targetAmount); err != nil {
+		return nil, errors.New("failed to set initial contribution")
 	}
 
 	return group, nil
@@ -75,5 +81,44 @@ func (s *groupService) JoinGroup(groupID, userID int) error {
 		return errors.New("failed to join group")
 	}
 
+	// 3. Recalculate contribution per member now that count changed
+	contribution, err := s.CalculateMemberContribution(groupID)
+	if err != nil {
+		return errors.New("failed to recalculate contributions")
+	}
+
+	// 4. Update all members' contribution amount
+	if err := s.repo.UpdateAllMemberContributions(groupID, contribution); err != nil {
+		return errors.New("failed to update member contributions")
+	}
+
 	return nil
+}
+
+func (s *groupService) CalculateMemberContribution(groupID int) (float64, error) {
+	// 1. Get group target
+	target, err := s.repo.GetGroupTarget(groupID)
+	if err != nil {
+		return 0, errors.New("failed to get group target")
+	}
+
+	// 2. Get member count
+	memberCount, err := s.repo.GetGroupMemberCount(groupID)
+	if err != nil {
+		return 0, errors.New("failed to get member count")
+	}
+
+	if target == 0 {
+		return 0, errors.New("group has not set a target")
+	}
+
+	if memberCount == 0 {
+		return 0, errors.New("group has no members")
+	}
+
+	// 3. Calculate contribution per member
+	// math.Round to 2 decimal places to handle rounding
+	contribution := math.Round((target/float64(memberCount))*100) / 100
+
+	return contribution, nil
 }
