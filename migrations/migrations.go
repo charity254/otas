@@ -11,6 +11,7 @@ func Run() {
 	files := []string{
 		"migrations/001_init.sql",
 		"migrations/002_groups_and_withdrawals.sql",
+		"migrations/003_transactions.sql",
 	}
 
 	for _, file := range files {

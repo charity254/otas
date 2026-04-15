@@ -20,3 +20,12 @@ type GroupMember struct {
 	DebtAmount         float64   `json:"debt_amount"`
 	JoinedAt           time.Time `json:"joined_at"`
 }
+
+type GroupProgress struct {
+	GroupID          int     `json:"group_id"`
+	GroupName        string  `json:"group_name"`
+	TargetAmount     float64 `json:"target_amount"`
+	CurrentAmount    float64 `json:"current_amount"`
+	RemainingAmount  float64 `json:"remaining_amount"`
+	UserContribution float64 `json:"user_contribution"`
+}
