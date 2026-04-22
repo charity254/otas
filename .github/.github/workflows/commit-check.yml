@@ -1,0 +1,16 @@
+name: Commit Message Enforcement
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  check-commits:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Validate commit messages
+        uses: wagoid/commitlint-github-action@v5
