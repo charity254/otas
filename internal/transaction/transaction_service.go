@@ -1,6 +1,7 @@
 package transaction
 
 import (
+	"database/sql"
 	"errors"
 
 	"otas/internal/account"
@@ -25,12 +26,13 @@ func (s *transactionService) ProcessTransaction(userID int, amount float64, user
 		return nil, errors.New("failed to check daily limit")
 	}
 
-	// 2. Daily limit already hit — record transaction, no deduction
+	// 2. Daily limit already hit;  record transaction, no deduction
 	if count >= int(user.DailyLimit) {
 		return s.repo.CreateTransaction(&models.Transaction{
 			UserID:      userID,
 			Amount:      amount,
 			Deduction:   0,
+			Type:        models.TransactionTypeDeduction,
 			AllocatedTo: "main",
 		})
 	}
@@ -39,34 +41,51 @@ func (s *transactionService) ProcessTransaction(userID int, amount float64, user
 	deduction := amount * 0.10
 	newCount := count + 1
 
-	// 4. Below threshold — deduction tracked but stays in main account
+	// 4. Below threshold; deduction tracked but stays in main account
 	if newCount < 5 {
 		return s.repo.CreateTransaction(&models.Transaction{
 			UserID:      userID,
 			Amount:      amount,
 			Deduction:   deduction,
+			Type:        models.TransactionTypeDeduction,
 			AllocatedTo: "main",
 		})
 	}
 
-	// 5. At or past threshold — route to correct saving account
+	// 5. At or past threshold ;route to correct saving account
 	allocatedTo, err := s.getAllocatedAccount(user, count)
 	if err != nil {
 		return nil, err
 	}
 
-	// 6. Update account balance
-	if err := s.accountRepo.UpdateBalance(userID, allocatedTo, deduction); err != nil {
-		return nil, errors.New("failed to update account balance")
+	// 6. Wrap balance update + record in a DB transaction
+	var savedTx *models.Transaction
+	err = s.repo.WithTx(func(tx *sql.Tx) error {
+		// update balance;transactional version
+		if err := s.accountRepo.UpdateBalanceTx(tx, userID, allocatedTo, deduction); err != nil {
+			return err
+		}
+
+		// record transaction; transactional version
+		t, err := s.repo.CreateTransactionTx(tx, &models.Transaction{
+			UserID:      userID,
+			Amount:      amount,
+			Deduction:   deduction,
+			AllocatedTo: string(allocatedTo),
+			Type:        models.TransactionTypeDeduction,
+		})
+		if err != nil {
+			return err
+		}
+
+		savedTx = t
+		return nil
+	})
+	if err != nil {
+		return nil, errors.New("failed to process transaction")
 	}
 
-	// 7. Record transaction
-	return s.repo.CreateTransaction(&models.Transaction{
-		UserID:      userID,
-		Amount:      amount,
-		Deduction:   deduction,
-		AllocatedTo: string(allocatedTo),
-	})
+	return savedTx, nil
 }
 
 func (s *transactionService) getAllocatedAccount(user *models.User, txCount int) (models.AccountType, error) {

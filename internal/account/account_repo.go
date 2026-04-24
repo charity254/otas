@@ -71,6 +71,7 @@ func (r *AccountRepository) GetAccountsByUserID(userID int) ([]models.Account, e
 	return accounts, nil
 }
 
+//normal balance update; no DB transaction needed
 func (r *AccountRepository) UpdateBalance(userID int, accountType models.AccountType, amount float64) error {
 	query := `
 		UPDATE accounts
@@ -79,6 +80,21 @@ func (r *AccountRepository) UpdateBalance(userID int, accountType models.Account
 		AND type = $3
 	`
 	_, err := r.DB.Exec(query, amount, userID, accountType)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// transactional version; inside WithTx
+func (r *AccountRepository) UpdateBalanceTx(tx *sql.Tx,userID int, accountType models.AccountType, amount float64) error {
+	query := `
+		UPDATE accounts
+		SET balance = balance + $1, updated_at = NOW()
+		WHERE user_id = $2
+		AND type = $3
+	`
+	_, err := tx.Exec(query, amount, userID, accountType)
 	if err != nil {
 		return err
 	}
