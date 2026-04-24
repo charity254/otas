@@ -16,25 +16,25 @@ func NewTransactionRepository(db *sql.DB) *transactionRepository {
 
 // for paths 1 and 2; no DB transaction needed
 func (r *transactionRepository) CreateTransaction(t *models.Transaction) (*models.Transaction, error) {
-    query := `
+	query := `
         INSERT INTO transactions (user_id, amount, deduction, allocated_to, type)
         VALUES ($1, $2, $3, $4, $5)
         RETURNING id, user_id, amount, deduction, allocated_to, type, created_at
     `
-    result := &models.Transaction{}
-    err := r.DB.QueryRow(query,
-        t.UserID, t.Amount, t.Deduction, t.AllocatedTo, t.Type,
-    ).Scan(
-        &result.ID, &result.UserID, &result.Amount,
-        &result.Deduction, &result.AllocatedTo, &result.Type, &result.CreatedAt,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return result, nil
+	result := &models.Transaction{}
+	err := r.DB.QueryRow(query,
+		t.UserID, t.Amount, t.Deduction, t.AllocatedTo, t.Type,
+	).Scan(
+		&result.ID, &result.UserID, &result.Amount,
+		&result.Deduction, &result.AllocatedTo, &result.Type, &result.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
-//for path 3, Tx needed
+// for path 3, Tx needed
 func (r *transactionRepository) CreateTransactionTx(tx *sql.Tx, t *models.Transaction) (*models.Transaction, error) {
 	query := `
         INSERT INTO transactions (user_id, amount, deduction, allocated_to, type)
@@ -92,4 +92,32 @@ func (r *transactionRepository) GetTotalContributed(userID int, accountType stri
 		return 0, err
 	}
 	return total, nil
+}
+
+func (r *transactionRepository) LogWithdrawalPayout(tx *sql.Tx, userID int, amount float64, withdrawalRequestID int) (*models.Transaction, error) {
+	query := `
+		INSERT INTO transactions (user_id, amount, deduction, allocated_to, type)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id, user_id, amount, deduction, allocated_to, type, created_at
+	`
+	result := &models.Transaction{}
+	err := tx.QueryRow(query,
+		userID,
+		amount,
+		0,      // no deduction sincethis is a payout
+		"main", // goes back to main account,since user is borrowing
+		models.TransactionTypeWithdrawalPayout,
+	).Scan(
+		&result.ID,
+		&result.UserID,
+		&result.Amount,
+		&result.Deduction,
+		&result.AllocatedTo,
+		&result.Type,
+		&result.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }

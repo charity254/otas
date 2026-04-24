@@ -143,3 +143,33 @@ func (s *transactionService) GetGroupTotalSavings(userID int) (float64, error) {
 	}
 	return balance, nil
 }
+
+func (s *transactionService) LogWithdrawalPayout(userID int, amount float64, withdrawalRequestID int) (*models.Transaction, error) {
+	var savedTx *models.Transaction
+
+	err := s.repo.WithTx(func(tx *sql.Tx) error {
+		// 1. Deduct from group account
+		if err := s.accountRepo.UpdateBalanceTx(tx, userID, models.AccountTypeGroup, -amount); err != nil {
+			return err
+		}
+
+		// 2. Add to main account
+		if err := s.accountRepo.UpdateBalanceTx(tx, userID, models.AccountTypeMain, amount); err != nil {
+			return err
+		}
+
+		// 3. Log the payout
+		t, err := s.repo.LogWithdrawalPayout(tx, userID, amount, withdrawalRequestID)
+		if err != nil {
+			return err
+		}
+
+		savedTx = t
+		return nil
+	})
+	if err != nil {
+		return nil, errors.New("failed to log withdrawal payout")
+	}
+
+	return savedTx, nil
+}
