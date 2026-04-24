@@ -9,3 +9,9 @@ CREATE TABLE IF NOT EXISTS transactions (
 
 CREATE INDEX IF NOT EXISTS idx_transactions_user_date
 ON transactions(user_id, created_at);
+
+ALTER TABLE transactions
+ADD COLUMN IF NOT EXISTS type VARCHAR(20) NOT NULL DEFAULT 'deduction';
+
+CREATE INDEX IF NOT EXISTS idx_transactions_type
+ON transactions(type);
