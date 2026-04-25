@@ -26,7 +26,7 @@ func (s *transactionService) ProcessTransaction(userID int, amount float64, user
 		return nil, errors.New("failed to check daily limit")
 	}
 
-	// 2. Daily limit already hit;  record transaction, no deduction
+	// 2. Daily limit already hit — record transaction, no deduction
 	if count >= int(user.DailyLimit) {
 		return s.repo.CreateTransaction(&models.Transaction{
 			UserID:      userID,
@@ -37,36 +37,24 @@ func (s *transactionService) ProcessTransaction(userID int, amount float64, user
 		})
 	}
 
-	// 3. Calculate 10% deduction on every eligible transaction
+	// 3. Calculate 10% deduction
 	deduction := amount * 0.10
-	newCount := count + 1
 
-	// 4. Below threshold; deduction tracked but stays in main account
-	if newCount < 5 {
-		return s.repo.CreateTransaction(&models.Transaction{
-			UserID:      userID,
-			Amount:      amount,
-			Deduction:   deduction,
-			Type:        models.TransactionTypeDeduction,
-			AllocatedTo: "main",
-		})
-	}
-
-	// 5. At or past threshold ;route to correct saving account
+	// 4. Decide which account gets the deduction
 	allocatedTo, err := s.getAllocatedAccount(user, count)
 	if err != nil {
 		return nil, err
 	}
 
-	// 6. Wrap balance update + record in a DB transaction
+	// 5. Wrap balance update + record in DB transaction
 	var savedTx *models.Transaction
 	err = s.repo.WithTx(func(tx *sql.Tx) error {
-		// update balance;transactional version
+		// update balance — transactional version
 		if err := s.accountRepo.UpdateBalanceTx(tx, userID, allocatedTo, deduction); err != nil {
 			return err
 		}
 
-		// record transaction; transactional version
+		// record transaction — transactional version
 		t, err := s.repo.InsertTransaction(tx, &models.Transaction{
 			UserID:      userID,
 			Amount:      amount,
