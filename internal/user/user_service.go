@@ -113,7 +113,7 @@ func (s *userService) createAccounts(user *models.User) error {
 			return errors.New("failed to create locked account")
 		}
 
-	// Personal flexible (5): main account serves as flexible
+	// Personal flexible (5 or 10): main account serves as flexible
 	case user.SavingType == models.SavingTypeFlexible:
 		// main account already created above
 	}

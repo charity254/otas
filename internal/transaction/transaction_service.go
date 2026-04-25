@@ -86,7 +86,7 @@ func (s *transactionService) getAllocatedAccount(user *models.User, txCount int)
 		return models.AccountTypeLocked, nil
 
 	// Group only(5): all 5 → group
-	case user.SavingType == models.SavingTypeGroup && user.DailyLimit == models.DailyLimit5:
+	case user.SavingType == models.SavingTypeGroup:
 		return models.AccountTypeGroup, nil
 
 	// Personal + locked(10); first 5 → locked, next 5 → flexible
@@ -97,10 +97,10 @@ func (s *transactionService) getAllocatedAccount(user *models.User, txCount int)
 		return models.AccountTypeMain, nil
 
 	// Personal and locked(5) : all 5 → locked
-	case user.SavingType == models.SavingTypePersonal && user.DailyLimit == models.DailyLimit5:
+	case user.SavingType == models.SavingTypePersonal:
 		return models.AccountTypeLocked, nil
 
-	// Personal flexible only(5): all → main account
+	// Personal flexible only(5  or 10 ): all → main account. Main serves as flexible
 	case user.SavingType == models.SavingTypeFlexible:
 		return models.AccountTypeMain, nil
 	}
