@@ -7,7 +7,6 @@ type AccountType string
 const (
 	AccountTypeMain     AccountType = "main"
 	AccountTypeLocked   AccountType = "locked"
-	AccountTypeFlexible AccountType = "flexible"
 	AccountTypeGroup    AccountType = "group"
 )
 

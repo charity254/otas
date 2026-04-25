@@ -94,7 +94,7 @@ func (s *transactionService) getAllocatedAccount(user *models.User, txCount int)
 		if txCount < 5 {
 			return models.AccountTypeLocked, nil
 		}
-		return models.AccountTypeFlexible, nil
+		return models.AccountTypeMain, nil
 
 	// Personal and locked(5) : all 5 → locked
 	case user.SavingType == models.SavingTypePersonal && user.DailyLimit == models.DailyLimit5:
