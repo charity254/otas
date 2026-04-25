@@ -34,13 +34,15 @@ func (r *transactionRepository) CreateTransaction(t *models.Transaction) (*model
 	return result, nil
 }
 
-// for path 3, Tx needed
-func (r *transactionRepository) CreateTransactionTx(tx *sql.Tx, t *models.Transaction) (*models.Transaction, error) {
+// to handle transactions that require Tx
+// InsertTransaction is the single entry point for all transaction types.
+// The caller is responsible for setting the correct Type, AllocatedTo and Deduction values.
+func (r *transactionRepository) InsertTransaction(tx *sql.Tx, t *models.Transaction) (*models.Transaction, error) {
 	query := `
-        INSERT INTO transactions (user_id, amount, deduction, allocated_to, type)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING id, user_id, amount, deduction, allocated_to, type, created_at
-    `
+		INSERT INTO transactions (user_id, amount, deduction, allocated_to, type)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id, user_id, amount, deduction, allocated_to, type, created_at
+	`
 	result := &models.Transaction{}
 	err := tx.QueryRow(query,
 		t.UserID,
@@ -92,32 +94,4 @@ func (r *transactionRepository) GetTotalContributed(userID int, accountType stri
 		return 0, err
 	}
 	return total, nil
-}
-
-func (r *transactionRepository) LogWithdrawalPayout(tx *sql.Tx, userID int, amount float64, withdrawalRequestID int) (*models.Transaction, error) {
-	query := `
-		INSERT INTO transactions (user_id, amount, deduction, allocated_to, type)
-		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id, user_id, amount, deduction, allocated_to, type, created_at
-	`
-	result := &models.Transaction{}
-	err := tx.QueryRow(query,
-		userID,
-		amount,
-		0,      // no deduction sincethis is a payout
-		"main", // goes back to main account,since user is borrowing
-		models.TransactionTypeWithdrawalPayout,
-	).Scan(
-		&result.ID,
-		&result.UserID,
-		&result.Amount,
-		&result.Deduction,
-		&result.AllocatedTo,
-		&result.Type,
-		&result.CreatedAt,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
 }
