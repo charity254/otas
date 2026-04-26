@@ -33,7 +33,7 @@ func (s *transactionService) ProcessTransaction(userID int, amount float64, user
 			Amount:      amount,
 			Deduction:   0,
 			Type:        models.TransactionTypeDeduction,
-			AllocatedTo: "main",
+			AllocatedTo: "flexible",
 		})
 	}
 
@@ -94,15 +94,15 @@ func (s *transactionService) getAllocatedAccount(user *models.User, txCount int)
 		if txCount < 5 {
 			return models.AccountTypeLocked, nil
 		}
-		return models.AccountTypeMain, nil
+		return models.AccountTypeFlexible, nil
 
 	// Personal and locked(5) : all 5 → locked
 	case user.SavingType == models.SavingTypePersonal:
 		return models.AccountTypeLocked, nil
 
-	// Personal flexible only(5  or 10 ): all → main account. Main serves as flexible
+	// Personal flexible only(5  or 10 ): all → flexible
 	case user.SavingType == models.SavingTypeFlexible:
-		return models.AccountTypeMain, nil
+		return models.AccountTypeFlexible, nil
 	}
 
 	return "", errors.New("invalid saving configuration")
@@ -139,7 +139,7 @@ func (s *transactionService) LogWithdrawalPayout(userID int, amount float64, wit
 		if err := s.accountRepo.UpdateBalanceTx(tx, userID, models.AccountTypeGroup, -amount); err != nil {
 			return err
 		}
-		if err := s.accountRepo.UpdateBalanceTx(tx, userID, models.AccountTypeMain, amount); err != nil {
+		if err := s.accountRepo.UpdateBalanceTx(tx, userID, models.AccountTypeFlexible, amount); err != nil {
 			return err
 		}
 
@@ -147,7 +147,7 @@ func (s *transactionService) LogWithdrawalPayout(userID int, amount float64, wit
 			UserID:      userID,
 			Amount:      amount,
 			Deduction:   0,
-			AllocatedTo: "main",
+			AllocatedTo: "flexible",
 			Type:        models.TransactionTypeWithdrawalPayout,
 		})
 		if err != nil {
@@ -168,7 +168,7 @@ func (s *transactionService) LogRepayment(userID int, amount float64) (*models.T
 	var savedTx *models.Transaction
 
 	err := s.repo.WithTx(func(tx *sql.Tx) error {
-		if err := s.accountRepo.UpdateBalanceTx(tx, userID, models.AccountTypeMain, -amount); err != nil {
+		if err := s.accountRepo.UpdateBalanceTx(tx, userID, models.AccountTypeFlexible, -amount); err != nil {
 			return err
 		}
 		if err := s.accountRepo.UpdateBalanceTx(tx, userID, models.AccountTypeGroup, amount); err != nil {

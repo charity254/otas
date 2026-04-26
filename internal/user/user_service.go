@@ -62,10 +62,10 @@ func (s *userService) Login(email, password string) (*models.User, error) {
 }
 
 func (s *userService) createAccounts(user *models.User) error {
-	// always create main account for every user
+	// always create flexible account for every user
 	if _, err := s.accountRepo.CreateAccount(&models.Account{
 		UserID: user.ID,
-		Type:   models.AccountTypeMain,
+		Type:   models.AccountTypeFlexible,
 	}); err != nil {
 		return errors.New("failed to create main account")
 	}
@@ -113,7 +113,7 @@ func (s *userService) createAccounts(user *models.User) error {
 			return errors.New("failed to create locked account")
 		}
 
-	// Personal flexible (5 or 10): main account serves as flexible
+	// Personal flexible (5 or 10)
 	case user.SavingType == models.SavingTypeFlexible:
 		// main account already created above
 	}
