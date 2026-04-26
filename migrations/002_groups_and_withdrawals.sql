@@ -1,0 +1,44 @@
+-- CREATE GROUPS TABLE
+CREATE TABLE IF NOT EXISTS groups (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    target_amount DECIMAL(15, 2) NOT NULL,
+    current_amount DECIMAL(15, 2) DEFAULT 0.00,
+    created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- CREATE GROUP MEMBERS TABLE
+CREATE TABLE IF NOT EXISTS group_members (
+    id SERIAL PRIMARY KEY,
+    group_id INTEGER REFERENCES groups(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    contribution_amount DECIMAL(15, 2) DEFAULT 0.00,
+    debt_amount DECIMAL(15, 2) DEFAULT 0.00,
+    joined_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(group_id, user_id)
+);
+
+-- CREATE WITHDRAWAL REQUESTS TABLE
+CREATE TABLE IF NOT EXISTS withdrawal_requests (
+    id SERIAL PRIMARY KEY,
+    group_id INTEGER REFERENCES groups(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE, -- requester
+    amount DECIMAL(15, 2) NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'approved', 'rejected', 'cancelled'
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- CREATE WITHDRAWAL APPROVALS TABLE (FOR INDIVIDUAL MEMBER RESPONSES)
+CREATE TABLE IF NOT EXISTS withdrawal_approvals (
+    id SERIAL PRIMARY KEY,
+    withdrawal_request_id INTEGER REFERENCES withdrawal_requests(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    contact_input VARCHAR(255),
+    status VARCHAR(20) DEFAULT 'approved', -- 'approved', 'rejected'
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(withdrawal_request_id, user_id)
+);
