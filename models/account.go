@@ -5,9 +5,8 @@ import "time"
 type AccountType string
 
 const (
-	AccountTypeMain     AccountType = "main"
-	AccountTypeLocked   AccountType = "locked"
 	AccountTypeFlexible AccountType = "flexible"
+	AccountTypeLocked   AccountType = "locked"
 	AccountTypeGroup    AccountType = "group"
 )
 

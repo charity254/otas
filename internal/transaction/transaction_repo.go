@@ -14,25 +14,49 @@ func NewTransactionRepository(db *sql.DB) *transactionRepository {
 	return &transactionRepository{DB: db}
 }
 
-// save transaction to DB
-func (r *transactionRepository) CreateTransaction(tx *models.Transaction) (*models.Transaction, error) {
+// for paths 1 and 2; no DB transaction needed
+func (r *transactionRepository) CreateTransaction(t *models.Transaction) (*models.Transaction, error) {
 	query := `
-		INSERT INTO transactions (user_id, amount, deduction, allocated_to)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id, user_id, amount, deduction, allocated_to, created_at
-	`
+        INSERT INTO transactions (user_id, amount, deduction, allocated_to, type)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING id, user_id, amount, deduction, allocated_to, type, created_at
+    `
 	result := &models.Transaction{}
 	err := r.DB.QueryRow(query,
-		tx.UserID,
-		tx.Amount,
-		tx.Deduction,
-		tx.AllocatedTo,
+		t.UserID, t.Amount, t.Deduction, t.AllocatedTo, t.Type,
+	).Scan(
+		&result.ID, &result.UserID, &result.Amount,
+		&result.Deduction, &result.AllocatedTo, &result.Type, &result.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+// to handle transactions that require Tx
+// InsertTransaction is the single entry point for all transaction types.
+// The caller is responsible for setting the correct Type, AllocatedTo and Deduction values.
+func (r *transactionRepository) InsertTransaction(tx *sql.Tx, t *models.Transaction) (*models.Transaction, error) {
+	query := `
+		INSERT INTO transactions (user_id, amount, deduction, allocated_to, type)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id, user_id, amount, deduction, allocated_to, type, created_at
+	`
+	result := &models.Transaction{}
+	err := tx.QueryRow(query,
+		t.UserID,
+		t.Amount,
+		t.Deduction,
+		t.AllocatedTo,
+		t.Type,
 	).Scan(
 		&result.ID,
 		&result.UserID,
 		&result.Amount,
 		&result.Deduction,
 		&result.AllocatedTo,
+		&result.Type,
 		&result.CreatedAt,
 	)
 	if err != nil {
